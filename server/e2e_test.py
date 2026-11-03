@@ -56,8 +56,18 @@ def unlock_as(key, user, password):
     m = re.search(r'<form[^>]*id="kc-form-login"[^>]*action="([^"]+)"', r.text)
     if not m:
         sys.exit(f"no Keycloak login form at {r.url}:\n{r.text[:2000]}")
+    # Keycloak marks its cookies Secure; a browser still sends them to
+    # http://localhost, requests doesn't
+    for cookie in s.cookies:
+        cookie.secure = False
     return s.post(html.unescape(m.group(1)), data={"username": user, "password": password,
                                                    "credentialId": ""}, timeout=30)
+
+
+def explain(r):
+    """Status, address and the message of a Keycloak or unlock server page."""
+    msg = re.search(r'(?:kc-feedback-text|input-error|class="err")[^>]*>\s*([^<]+)', r.text)
+    return f"{r.status_code} at {r.url}: {msg.group(1).strip() if msg else r.text[:1500]}"
 
 
 def main():
@@ -76,11 +86,11 @@ def main():
 
     r = unlock_as(key, "alice", "alice")
     if r.status_code != 200 or "e2e-pass" not in r.text:
-        sys.exit(f"alice: expected the password, got {r.status_code} at {r.url}:\n{r.text[:2000]}")
+        sys.exit(f"alice: expected the password, got {explain(r)}")
     print("alice sees the password")
     r = unlock_as(key, "bob", "bob")
     if r.status_code != 403 or "e2e-pass" in r.text:
-        sys.exit(f"bob: expected a refusal, got {r.status_code}:\n{r.text[:2000]}")
+        sys.exit(f"bob: expected a refusal, got {explain(r)}")
     print("bob is refused")
 
 

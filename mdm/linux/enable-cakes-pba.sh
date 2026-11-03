@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
 	*) die "unknown option $1" ;;
 	esac
 done
-[ -n "$SERVER" ] && [ -n "$TOKEN" ] || die "--server and --token are needed"
+if [ -z "$SERVER" ] || [ -z "$TOKEN" ]; then die "--server and --token are needed"; fi
 # tests run the script against a stand-in sedutil-cli without root
 [ -n "$DRY_RUN" ] || [ -n "${CAKES_PBA_TEST:-}" ] || [ "$(id -u)" = 0 ] || die "run as root"
 command -v curl >/dev/null || die "curl is needed"
