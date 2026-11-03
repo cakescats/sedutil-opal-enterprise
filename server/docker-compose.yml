@@ -1,0 +1,43 @@
+# Demo of unlocking with a company account: Keycloak as the SSO provider
+# and the unlock server. See docs/sso.md.
+#
+#   docker compose up -d
+#   http://localhost:8000          unlock server
+#   http://localhost:8080          Keycloak (admin / admin)
+#   users: alice / alice, bob / bob (alice@example.com, bob@example.com)
+#   enrolment token for the rollout scripts: demo-enroll-token
+#
+# Not for production: fixed secrets, HTTP, Keycloak in dev mode.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # browsers reach Keycloak at localhost, the unlock server at keycloak:8080
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports: ["8080:8080"]
+    volumes:
+      - ./keycloak/realm-cakes.json:/opt/keycloak/data/import/realm-cakes.json:ro
+
+  unlock:
+    build: .
+    environment:
+      OIDC_ISSUER: http://localhost:8080/realms/cakes
+      OIDC_METADATA_URL: http://keycloak:8080/realms/cakes/.well-known/openid-configuration
+      OIDC_CLIENT_ID: cakes-unlock
+      OIDC_CLIENT_SECRET: cakes-unlock-demo-secret
+      PUBLIC_URL: http://localhost:8000
+      SECRET_KEY: demo-only-change-me
+      ENROLL_TOKEN: demo-enroll-token
+      DEFAULT_OWNERS: alice@example.com
+    ports: ["8000:8000"]
+    volumes:
+      - unlock-data:/data
+    depends_on: [keycloak]
+
+volumes:
+  unlock-data:

@@ -1,0 +1,5 @@
+__pycache__/
+*.db
+*.img
+*.img.gz
+*.machine.json

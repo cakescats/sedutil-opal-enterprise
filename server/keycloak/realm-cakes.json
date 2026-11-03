@@ -1,0 +1,38 @@
+{
+  "realm": "cakes",
+  "enabled": true,
+  "users": [
+    {
+      "username": "alice",
+      "email": "alice@example.com",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Demo",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "alice", "temporary": false }]
+    },
+    {
+      "username": "bob",
+      "email": "bob@example.com",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Demo",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "bob", "temporary": false }]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "cakes-unlock",
+      "name": "CakesCats PBA unlock",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "cakes-unlock-demo-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:8000/auth/callback"],
+      "webOrigins": ["http://localhost:8000"]
+    }
+  ]
+}

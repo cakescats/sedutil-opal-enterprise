@@ -1,0 +1,41 @@
+# Roll out the CakesCats PBA to Linux machines with an OPAL 2.0 drive.
+#
+#   ansible-playbook -i inventory mdm/ansible/cakes-pba.yml \
+#       -e unlock_server=https://unlock.corp.com -e enroll_token=<token>
+#
+# Expects sedutil-cli-linux-x86_64 from a cakescats/sedutil-pba release next
+# to this playbook (or set sedutil_binary). Safe to run again: machines with
+# locking on already are reported as unchanged.
+- name: CakesCats PBA
+  hosts: all
+  become: true
+  vars:
+    sedutil_binary: "{{ playbook_dir }}/sedutil-cli-linux-x86_64"
+    machine_id: "{{ inventory_hostname_short }}"
+    owners: ""
+  tasks:
+    - name: Install sedutil-cli
+      ansible.builtin.copy:
+        src: "{{ sedutil_binary }}"
+        dest: /usr/local/sbin/sedutil-cli
+        mode: "0755"
+
+    - name: Install the rollout script
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../linux/enable-cakes-pba.sh"
+        dest: /usr/local/sbin/enable-cakes-pba
+        mode: "0755"
+
+    - name: Enrol and turn on locking
+      ansible.builtin.command:
+        argv: >-
+          {{ ['/usr/local/sbin/enable-cakes-pba', '--server', unlock_server, '--token', enroll_token,
+              '--machine-id', machine_id, '--sedutil', '/usr/local/sbin/sedutil-cli']
+             + (['--owners', owners] if owners else []) }}
+      register: pba
+      changed_when: "'locking is on already' not in pba.stdout"
+      no_log: true  # the command line holds the enrolment token
+
+    - name: Result
+      ansible.builtin.debug:
+        msg: "{{ pba.stdout_lines }}"

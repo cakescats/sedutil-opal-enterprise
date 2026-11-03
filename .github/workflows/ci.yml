@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # the image builder the server and the tests use, from cakescats/sedutil-pba
+  BUILDER_URL: https://raw.githubusercontent.com/cakescats/sedutil-pba/e8b543b1ad3ff0f96230d3801336735d9ea7a821/tools/cakes-builder.py
+
+jobs:
+  server-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r server/requirements.txt
+      - name: Unit tests
+        working-directory: server
+        run: python -m unittest -v test_unlock
+
+  scripts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: shellcheck mdm/linux/enable-cakes-pba.sh tests/fake-sedutil.sh
+      - name: Ansible syntax
+        run: |
+          pip install ansible-core
+          ansible-playbook --syntax-check -i localhost, mdm/ansible/cakes-pba.yml
+
+  windows-script:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD\mdm\windows\Enable-CakesPBA.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors) { $errors; exit 1 }
+      - name: Dry run with a stand-in drive (Windows PowerShell 5.1, as Intune runs it)
+        shell: powershell
+        run: |
+          .\mdm\windows\Enable-CakesPBA.ps1 -Server https://unlock.example.com -Token t -Sedutil "$PWD\tests\fake-sedutil.cmd" -DryRun
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $log = Get-Content "$env:ProgramData\CakesCats\PBA\enable.log" -Raw
+          $log
+          if ($log -notmatch 'PhysicalDrive1: enrolling') { exit 1 }
+
+  e2e:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Start Keycloak and the unlock server
+        working-directory: server
+        run: docker compose up -d --build
+      - name: Enrolment and SSO unlock through Keycloak
+        working-directory: server
+        run: |
+          pip install -r requirements.txt
+          curl -fsSL -o /tmp/cakes-builder.py "$BUILDER_URL"
+          BUILDER_PY=/tmp/cakes-builder.py python e2e_test.py
+      - name: Linux rollout script against the server
+        run: |
+          export FAKE_LOG=/tmp/fake.log CAKES_PBA_TEST=1
+          mdm/linux/enable-cakes-pba.sh --server http://localhost:8000 --token demo-enroll-token \
+            --sedutil tests/fake-sedutil.sh --machine-id ci-linux-1
+          grep -q '^--enableLockingRange 0 ' /tmp/fake.log
+          mdm/linux/enable-cakes-pba.sh --server http://localhost:8000 --token demo-enroll-token \
+            --sedutil tests/fake-sedutil.sh --machine-id ci-linux-1 | grep -q 'locking is on already'
+          docker compose -f server/docker-compose.yml exec -T unlock python manage.py audit
+      - name: Logs
+        if: failure()
+        working-directory: server
+        run: docker compose logs --tail 200
