@@ -68,11 +68,19 @@ try {
         if (-not $Device) { throw 'no OPAL 2.0 drive found' }
     }
 
-    $query = Invoke-Sedutil @('--query', $Device) 'query'
+    $query = (Invoke-Sedutil @('--query', $Device) 'query') -join "`n"
+    # check before enrolling: a failed --initialSetup later would leave a
+    # password on the server for a drive that never got locked
+    if ($query -notmatch 'LockingSupported = Y') { throw "${Device} has no OPAL locking (wrong -Device?)" }
     if ($query -match 'LockingEnabled = Y') {
         Write-Log "${Device}: locking is on already, nothing to do"
-        Set-Marker $Device
+        # a dry run changes nothing, not even the detection marker
+        if (-not $DryRun) { Set-Marker $Device }
         exit 0
+    }
+    # drives with the Block SID feature tell whether the owner password was changed
+    if ($query -match 'SID equals MSID = N') {
+        throw "${Device} has an owner already but locking is off: revert it or set it up by hand"
     }
     Write-Log "${Device}: enrolling $MachineId with $Server"
     if ($DryRun) {

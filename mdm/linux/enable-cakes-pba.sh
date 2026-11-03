@@ -47,9 +47,17 @@ if [ -z "$DEVICE" ]; then
 	DEVICE=$("$SEDUTIL" --scan | awk '$1 ~ /^\/dev\// && $2 ~ /2/ { print $1; exit }')
 	[ -n "$DEVICE" ] || die "no OPAL 2.0 drive found"
 fi
-if "$SEDUTIL" --query "$DEVICE" | grep -q 'LockingEnabled = Y'; then
+query=$("$SEDUTIL" --query "$DEVICE" 2>&1) || true
+# check before enrolling: a failed --initialSetup later would leave a
+# password on the server for a drive that never got locked
+echo "$query" | grep -q 'LockingSupported = Y' || die "$DEVICE has no OPAL locking (wrong --device?)"
+if echo "$query" | grep -q 'LockingEnabled = Y'; then
 	echo "$DEVICE: locking is on already, nothing to do"
 	exit 0
+fi
+# drives with the Block SID feature tell whether the owner password was changed
+if echo "$query" | grep -q 'SID equals MSID = N'; then
+	die "$DEVICE has an owner already but locking is off: revert it or set it up by hand"
 fi
 echo "$DEVICE: enrolling $MACHINE_ID with $SERVER"
 if [ -n "$DRY_RUN" ]; then

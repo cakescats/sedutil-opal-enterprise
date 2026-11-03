@@ -55,6 +55,13 @@ jobs:
           $log = Get-Content "$env:ProgramData\CakesCats\PBA\enable.log" -Raw
           $log
           if ($log -notmatch 'PhysicalDrive1: enrolling') { exit 1 }
+          # a drive without OPAL, or with an owner already, is refused before enrolling
+          foreach ($d in 'noopal', 'owned') {
+            $env:FAKE_DRIVE = $d
+            .\mdm\windows\Enable-CakesPBA.ps1 -Server https://unlock.example.com -Token t -Sedutil "$PWD\tests\fake-sedutil.cmd" -DryRun
+            if ($LASTEXITCODE -ne 1) { "FAKE_DRIVE=$d was not refused"; exit 1 }
+          }
+          $env:FAKE_DRIVE = ''
 
   e2e:
     runs-on: ubuntu-24.04
@@ -80,6 +87,16 @@ jobs:
           grep -q '^--enableLockingRange 0 ' /tmp/fake.log
           mdm/linux/enable-cakes-pba.sh --server http://localhost:8000 --token demo-enroll-token \
             --sedutil tests/fake-sedutil.sh --machine-id ci-linux-1 | grep -q 'locking is on already'
+          # a drive without OPAL, or with an owner already, is refused before enrolling
+          for d in noopal owned; do
+            if FAKE_DRIVE=$d FAKE_LOG=/tmp/fake-$d.log mdm/linux/enable-cakes-pba.sh --server http://localhost:8000 \
+                --token demo-enroll-token --sedutil tests/fake-sedutil.sh --machine-id ci-$d; then
+              echo "FAKE_DRIVE=$d was not refused"; exit 1
+            fi
+            if docker compose -f server/docker-compose.yml exec -T unlock python manage.py list | grep -q "ci-$d"; then
+              echo "FAKE_DRIVE=$d was enrolled"; exit 1
+            fi
+          done
           docker compose -f server/docker-compose.yml exec -T unlock python manage.py audit
       - name: Logs
         if: failure()
