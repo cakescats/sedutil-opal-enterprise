@@ -28,6 +28,12 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# sedutil-cli needs raw disk access, and the log lives in ProgramData
+$principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    [Console]::Error.WriteLine('Enable-CakesPBA: run as administrator or SYSTEM')
+    exit 1
+}
 $logDir = Join-Path $env:ProgramData 'CakesCats\PBA'
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 $log = Join-Path $logDir 'enable.log'
