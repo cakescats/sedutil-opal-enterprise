@@ -3,11 +3,11 @@ FROM python:3.12-slim
 
 # The released PBA image that enrolment builds machine images from, and the
 # image builder, both from cakescats/sedutil-pba and checked by hash.
-# The PBA shows the QR code from release v1.20.0-cakes.2 on; update these
-# four lines to the release you roll out.
-ARG PBA_IMAGE_URL=https://github.com/cakescats/sedutil-pba/releases/download/v1.20.0-cakes.1/cakes-pba-1.20.0-cakes.1+g39e8ed9-default.img.gz
-ARG PBA_IMAGE_SHA256=ce5f208401123d8b6a908ad4ac6d05fbeddbfd8c2cb602867df5744e6b5e4659
-ARG BUILDER_URL=https://raw.githubusercontent.com/cakescats/sedutil-pba/e8b543b1ad3ff0f96230d3801336735d9ea7a821/tools/cakes-builder.py
+# Update these four lines to the release you roll out (v1.20.0-cakes.2 or
+# later: earlier PBAs don't show the QR code).
+ARG PBA_IMAGE_URL=https://github.com/cakescats/sedutil-pba/releases/download/v1.20.0-cakes.2/cakes-pba-1.20.0-cakes.2-default.img.gz
+ARG PBA_IMAGE_SHA256=47a051b26858af213a619bab08a30132b9453124fe76d6e2fa827437fceef931
+ARG BUILDER_URL=https://raw.githubusercontent.com/cakescats/sedutil-pba/098281205d0a3a2b3a7ecbb571dfad5b7cc1700e/tools/cakes-builder.py
 ARG BUILDER_SHA256=4e3a111018e927f600270aea82cbc30d42d0e3addde6e75c5de91c121dde3002
 
 WORKDIR /app

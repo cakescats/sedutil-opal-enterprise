@@ -11,7 +11,7 @@ permissions:
 
 env:
   # the image builder the server and the tests use, from cakescats/sedutil-pba
-  BUILDER_URL: https://raw.githubusercontent.com/cakescats/sedutil-pba/e8b543b1ad3ff0f96230d3801336735d9ea7a821/tools/cakes-builder.py
+  BUILDER_URL: https://raw.githubusercontent.com/cakescats/sedutil-pba/098281205d0a3a2b3a7ecbb571dfad5b7cc1700e/tools/cakes-builder.py
 
 jobs:
   server-tests:
