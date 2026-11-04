@@ -1,4 +1,4 @@
-# sedutil OPAL Enterprise: SSO unlock and MDM rollout for self-encrypting drives
+# sedutil OPAL Enterprise: SSO and MDM integration for self-encrypting drives
 
 Corporate add-on to [CakesCats PBA](https://github.com/cakescats/sedutil-pba),
 the maintained **sedutil** pre-boot authorization image for **TCG OPAL 2.0**
@@ -6,14 +6,14 @@ self-encrypting drives. The drives encrypt in hardware, so there is no
 performance cost and nothing to license. This repository adds what a company
 needs around them:
 
-- **Unlock with the company account (SSO).**
-  - F2 on the PBA screen shows a QR code.
+- **SSO integration.** The company sign-in decides who may open which machine.
+  - F2 on the PBA screen hands the request over to SSO through a QR code.
   - The employee scans it with a phone and signs in with Entra ID, Okta,
     Google Workspace, Keycloak or any OpenID Connect provider.
   - The unlock server shows the password to type in.
   - No helpdesk call, no network in the PBA, every unlock in the audit log.
-- **MDM rollout** with Microsoft Intune, Ansible or any tool that runs
-  scripts as SYSTEM or root. The script enrols the machine, gets its PBA
+- **MDM integration:** rollout and configuration with Microsoft Intune, Ansible or
+  any tool that runs scripts as SYSTEM or root. The script enrols the machine, gets its PBA
   image from the server and turns on locking. It is safe to run again.
 - **Unlock server:**
   - a small Flask app with SQLite;
@@ -54,7 +54,7 @@ cd server && docker compose up -d --build
 
 | Part | State |
 |---|---|
-| QR code unlock with OpenID Connect | works; tested end to end with Keycloak in CI |
+| SSO integration (OpenID Connect) | works; tested end to end with Keycloak in CI |
 | Enrolment and image per machine | works |
 | Windows rollout (Intune, PowerShell) | works; tested with a dry run in CI |
 | Linux rollout (shell, Ansible) | works; tested against the server in CI with a stand-in drive |
