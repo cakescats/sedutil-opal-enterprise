@@ -38,6 +38,7 @@ needs around them:
 
 ## Start
 
+- [docs/quickstart.ru.md](docs/quickstart.ru.md): step by step from server to QR unlock (Russian).
 - [docs/server.md](docs/server.md): run the unlock server, connect the sign-in provider.
 - [docs/mdm.md](docs/mdm.md): roll out with Intune, Ansible or another tool.
 - [CakesCats PBA docs](https://github.com/cakescats/sedutil-pba/tree/main/docs):

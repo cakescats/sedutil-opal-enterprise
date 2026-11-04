@@ -34,6 +34,7 @@
 
 ## С чего начать
 
+- **[docs/quickstart.ru.md](docs/quickstart.ru.md) — пошагово: сервер, адрес, образ, диск, проверка.**
 - [docs/server.md](docs/server.md) — запуск сервера и подключение SSO-провайдера.
 - [docs/mdm.md](docs/mdm.md) — развёртывание через Intune, Ansible и другие системы.
 - [Документация CakesCats PBA](https://github.com/cakescats/sedutil-pba/tree/main/docs) —
